@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Image Description</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100vh;
+        background-color: #f2f2f2;
+        font-family: Arial, sans-serif;
+        font-size: 16px;
+      }
+      
+      .container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+      }
+      
+      .upload-image {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 2rem;
+      }
+      
+      .upload-image img {
+        max-width: 100%;
+        height: auto;
+        margin-bottom: 1rem;
+      }
+      
+      .upload-image label {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+      }
+      
+      .upload-image input {
+        margin-bottom: 1rem;
+      }
+      
+      .generate {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #4CAF50;
+        color: #fff;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        font-size: 1.5rem;
+        font-weight: bold;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+      
+      .generate:hover {
+        background-color: #3e8e41;
+      }
+      
+      .loading {
+        display: none;
+        margin-top: 1rem;
+        font-size: 1.25rem;
+        font-weight: bold;
+      }
+      
+      .loading::after {
+        content: "";
+        display: inline-block;
+        width: 1rem;
+        height: 1rem;
+        margin-left: 1rem;
+        border-radius: 50%;
+        border: 0.25rem solid #4CAF50;
+        border-top-color: transparent;
+        animation: spin 1s linear infinite;
+      }
+      
+      .description {
+        display: none;
+        margin-top: 1rem;
+        font-size: 1.5rem;
+        text-align: center;
+        font-weight: bold;
+      }
+
+      #output {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+      }
+
+      #output img {
+        max-height: 90vh;
+        max-width: 90%;
+        object-fit: contain;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="upload-image">
+        <label>Image analysis From ILMpk</label>
+        <label>Enter image link:</label>
+        <input class="input" id="imageUrl" type="text" placeholder="Enter image link">
+        <button class="generate" onclick="generateImage()">Generate</button>
+        <div class="loading">Loading image description...<span></span></div>
+      </div>
+      <div id="output"></div>
+      <div class="description">-</div>
+    </div>
+    <script>
+      const subscriptionKey = "ca2b571c486c4e04acd837466bdb8fcc";
+      const endpoint = "https://imagealt.cognitiveservices.azure.com/vision/v3.1/analyze";
+      const params = {
+        visualFeatures: "Description",
+        language: "en"
+      };
+
+      function generateImage() {
+        const imageUrl = document.getElementById("imageUrl").value;
+        const outputElem = document.getElementById("output");
+
+        if (!imageUrl) {
+          return;
+        }
+        const loadingEl = document.querySelector(".loading");
+        const descriptionEl = document.querySelector(".description");
+        loadingEl.style.display = "block";
+        descriptionEl.style.display = "none";
+
+        const image = document.createElement("img");
+        image.src = imageUrl;
+        image.alt = "";
+        outputElem.innerHTML = "";
+        outputElem.appendChild(image);
+
+        fetch(endpoint + "?visualFeatures=Description&language=en", {
+          headers: {
+            "Content-Type": "application/json",
+            "Ocp-Apim-Subscription-Key": subscriptionKey
+          },
+          method: "POST",
+          body: JSON.stringify({ url: imageUrl })
+        })
+          .then(response => response.json())
+          .then(data => {
+            const description = data.description.captions[0].text;
+            loadingEl.style.display = "none";
+            descriptionEl.textContent = description;
+            descriptionEl.style.display = "block";
+            outputElem.style.display = "flex";
+          })
+          .catch(error => {
+            console.log(error);
+            loadingEl.style.display = "none";
+            descriptionEl.textContent = "Error loading image description.";
+            descriptionEl.style.display = "block";
+          });
+      }
+
+      document.querySelector("#imageUrl").addEventListener("keydown", event => {
+        if (event.which === 13) {
+          event.preventDefault();
+          generateImage();
+        }
+      });
+    </script>
+  </body>
+</html>
